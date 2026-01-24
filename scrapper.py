@@ -3,28 +3,32 @@ from rich.panel import Panel
 from rich.text import Text
 from rich import box
 from rich.console import Group
-import json
+from parsers.factory import LinkedInDataParser
+from models.update import Update
+from models.comment import Comment, CommentParser
 
-with open("reaction.json", "r") as f:
-    json_data = json.load(f)
-    
-# 1. Create lookup index for speed
-index = {item.get('entityUrn'): item for item in json_data['included'] if 'entityUrn' in item}
-
-# 2. Extract activities
-activities = json_data.get('data', {}).get('data', {}).get('feedDashProfileUpdatesByMemberReactions', {}).get('*elements', [])
+# Parse reactions using the new typed classes
+parser = LinkedInDataParser.from_file("reaction.json")
+reactions_response = parser.parse_reactions()
+comment_parser = CommentParser(parser.index)
 
 # Initialize rich console
 console = Console()
 
-def create_comment_panel(comment_obj, index, is_reply=False):
-    """Helper function to create a comment panel with nested replies"""
-    # Extract comment data
-    comment_text = comment_obj.get('commentary', {}).get('text', {})
-    commenter = comment_obj.get('commenter', {})
-    comment_author = commenter.get('title', {}).get('text', "Unknown")
-    comment_profile_url = commenter.get('navigationUrl', "")
-    comment_headline = commenter.get('subtitle', "")
+def create_comment_panel(comment: Comment, is_reply: bool = False, index: dict = None) -> Panel:
+    """Helper function to create a comment panel with nested replies using typed Comment object"""
+    # Extract comment data with type safety
+    comment_text = comment.commentary.text if comment.commentary else "No text"
+    commenter = comment.commenter
+    
+    if not commenter:
+        comment_author = "Unknown"
+        comment_profile_url = ""
+        comment_headline = ""
+    else:
+        comment_author = commenter.title.text if commenter.title else "Unknown"
+        comment_profile_url = commenter.navigation_url or ""
+        comment_headline = commenter.subtitle or ""
     
     # Create comment content with author info
     comment_content = Text()
@@ -41,17 +45,24 @@ def create_comment_panel(comment_obj, index, is_reply=False):
     comment_content.append("\n\nComment: ", style="bold yellow" if not is_reply else "bold green")
     comment_content.append(f"{comment_text}", style="white")
     
-    # Get replies for this comment
+    # Get replies for this comment (now using typed replies list)
+    # Also check social_detail directly as fallback (like original code)
     reply_panels = []
-    social_detail_urn = comment_obj.get('*socialDetail')
-    if social_detail_urn:
-        social_detail = index.get(social_detail_urn)
-        if social_detail and social_detail.get('comments'):
-            reply_urns = social_detail.get('comments', {}).get('*elements', [])
-            for reply_urn in reply_urns:
-                reply_obj = index.get(reply_urn)
-                if reply_obj:
-                    reply_panel = create_comment_panel(reply_obj, index, is_reply=True)
+    
+    # First try the parsed replies list
+    if comment.replies:
+        for reply in comment.replies:
+            reply_panel = create_comment_panel(reply, is_reply=True, index=index)
+            reply_panels.append(reply_panel)
+    # Fallback: check social_detail directly if replies weren't parsed
+    elif comment.social_detail and comment.social_detail.elements and index:
+        # Parse replies on-the-fly from social_detail
+        for reply_urn in comment.social_detail.elements:
+            reply_data = index.get(reply_urn)
+            if reply_data:
+                reply = comment_parser.parse(reply_data)
+                if reply:
+                    reply_panel = create_comment_panel(reply, is_reply=True, index=index)
                     reply_panels.append(reply_panel)
     
     # Create panel for this comment
@@ -86,45 +97,46 @@ def create_comment_panel(comment_obj, index, is_reply=False):
     
     return comment_panel
 
-for urn in activities:
-    item = index.get(urn)
-    if not item or item.get('$type') != 'com.linkedin.voyager.dash.feed.Update':
+# Process each update with typed access
+for update in reactions_response.updates:
+    # Skip if not a valid Update
+    if not update:
         continue
 
     # --- 1. THE ACTION & REACTION TYPE ---
-    header_text = item.get('header', {}).get('text', {}).get('text', "")
+    header_text = update.header.text if update.header else ""
 
     # --- 2. THE ORIGINAL POST TEXT ---
     # In a reaction update, the original post text is often in 'commentary'
-    # or inside 'resharedUpdate' if they reacted to a share.
     post_text = "No text content"
-    if item.get('commentary'):
-        post_text = item['commentary'].get('text', {}).get('text', "")
+    if update.commentary:
+        post_text = update.commentary.text if update.commentary.text else "No text content"
     
     # --- 3. THE ORIGINAL AUTHOR ---
-    # We look for the 'actor' URN and find their name in our index
+    # Use typed actor component
     author_name = "Unknown Author"
     author_headline = ""
-    actor = item.get('actor')
-    if actor:
-        author_name = actor.get("name", {}).get("text", "Unknown Author")
-        author_headline = actor.get("description", {}).get("text", "")
+    if update.actor:
+        if update.actor.name:
+            author_name = update.actor.name.text or "Unknown Author"
+        if update.actor.description:
+            author_headline = update.actor.description.text or ""
 
     # --- 4. THE URL ---
-    post_url = item.get('socialContent', {}).get('shareUrl') or item.get('metadata', {}).get('shareUrl')
+    post_url = None
+    if update.social_content and update.social_content.share_url:
+        post_url = update.social_content.share_url
+    elif update.metadata and update.metadata.share_url:
+        post_url = update.metadata.share_url
 
     # --- 5. EXTRACT COMMENTS WITH REPLIES ---
-    highlightedComments = item.get('*highlightedComments', [])
+    # Now using typed highlighted_comments list
     comment_panels = []
     
-    if highlightedComments:
-        for comment_urn in highlightedComments:
-            comment_obj = index.get(comment_urn)
-            if not comment_obj:
-                continue
-            
+    if update.highlighted_comments:
+        for comment in update.highlighted_comments:
             # Create comment panel (which will recursively include replies)
-            comment_panel = create_comment_panel(comment_obj, index, is_reply=False)
+            comment_panel = create_comment_panel(comment, is_reply=False, index=parser.index)
             comment_panels.append(comment_panel)
     
     # --- 6. CREATE MAIN CONTENT ---
@@ -138,7 +150,10 @@ for urn in activities:
     content.append("Post Content: ", style="bold cyan")
     content.append(f"{post_text}", style="white")
     content.append("\nLink:         ", style="bold cyan")
-    content.append(f"{post_url}", style="blue underline")
+    if post_url:
+        content.append(f"{post_url}", style="blue underline")
+    else:
+        content.append("No URL available", style="dim")
     
     # Create main panel
     if comment_panels:
