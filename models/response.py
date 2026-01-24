@@ -113,6 +113,26 @@ class CommentsCollectionResponse(BaseModel):
 
 
 @dataclass
+class PostsCollectionResponse(BaseModel):
+    """Posts collection response."""
+    
+    feed_dash_profile_updates_by_member_share_feed: Optional[CollectionResponse] = None
+    type: Optional[str] = None
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "PostsCollectionResponse":
+        """Create from dictionary."""
+        posts = None
+        if data.get("feedDashProfileUpdatesByMemberShareFeed"):
+            posts = CollectionResponse.from_dict(data["feedDashProfileUpdatesByMemberShareFeed"])
+        
+        return cls(
+            feed_dash_profile_updates_by_member_share_feed=posts,
+            type=data.get("$type"),
+        )
+
+
+@dataclass
 class LinkedInResponse(BaseModel):
     """Top-level LinkedIn API response."""
     
@@ -144,5 +164,14 @@ class CommentsResponse(BaseModel):
     """Parsed comments response with typed Comment objects."""
     
     comments: List[Comment] = field(default_factory=list)
+    raw_response: Optional[LinkedInResponse] = None
+    index: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class PostsResponse(BaseModel):
+    """Parsed posts response with typed Update objects."""
+    
+    updates: List[Update] = field(default_factory=list)
     raw_response: Optional[LinkedInResponse] = None
     index: Dict[str, Any] = field(default_factory=dict)

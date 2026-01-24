@@ -8,8 +8,10 @@ from models.response import (
     LinkedInResponse,
     ReactionsResponse,
     CommentsResponse,
+    PostsResponse,
     ReactionsCollectionResponse,
     CommentsCollectionResponse,
+    PostsCollectionResponse,
 )
 from models.update import Update, UpdateParser
 from models.comment import Comment, CommentParser
@@ -76,6 +78,11 @@ class LinkedInDataParser:
         if comments:
             return comments.get("*elements", [])
         
+        # Try posts
+        posts = data.get("feedDashProfileUpdatesByMemberShareFeed")
+        if posts:
+            return posts.get("*elements", [])
+        
         return []
     
     def parse_reactions(self) -> ReactionsResponse:
@@ -117,6 +124,23 @@ class LinkedInDataParser:
         
         return CommentsResponse(
             comments=all_comments,
+            raw_response=LinkedInResponse.from_dict(self.json_data) if self.json_data else None,
+            index=self.index,
+        )
+    
+    def parse_posts(self) -> PostsResponse:
+        """
+        Parse posts from JSON data.
+        
+        Returns:
+            PostsResponse with typed Update objects
+        """
+        elements = self._get_elements()
+        update_parser = UpdateParser(self.index)
+        updates = update_parser.parse_list(elements)
+        
+        return PostsResponse(
+            updates=updates,
             raw_response=LinkedInResponse.from_dict(self.json_data) if self.json_data else None,
             index=self.index,
         )

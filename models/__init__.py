@@ -17,6 +17,8 @@ from .response import (
     CollectionResponse,
     ReactionsResponse,
     CommentsResponse,
+    PostsResponse,
+    PostsCollectionResponse,
 )
 
 __all__ = [
@@ -41,4 +43,6 @@ __all__ = [
     "CollectionResponse",
     "ReactionsResponse",
     "CommentsResponse",
+    "PostsResponse",
+    "PostsCollectionResponse",
 ]
