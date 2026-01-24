@@ -44,7 +44,6 @@ class UpdateMetadata(BaseModel):
 class Update(BaseModel):
     """Update/reaction data model."""
     
-    entity_urn: Optional[str] = None
     actor: Optional[ActorComponent] = None
     header: Optional[TextViewModel] = None
     commentary: Optional[TextViewModel] = None
@@ -52,14 +51,7 @@ class Update(BaseModel):
     metadata: Optional[UpdateMetadata] = None
     highlighted_comments_urns: Optional[List[str]] = None
     highlighted_comments: List[Comment] = field(default_factory=list)
-    social_detail_urn: Optional[str] = None
-    boost_header: Optional[Any] = None
-    contextual_header: Optional[Any] = None
     reshared_update_urn: Optional[str] = None  # URN reference to reshared update
-    interstitial: Optional[Any] = None
-    aggregated_content: Optional[Any] = None
-    contextual_description: Optional[Any] = None
-    type: Optional[str] = None
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Update":
@@ -94,7 +86,6 @@ class Update(BaseModel):
             metadata = UpdateMetadata.from_dict(data["metadata"])
         
         return cls(
-            entity_urn=data.get("entityUrn"),
             actor=actor,
             header=header,
             commentary=commentary,
@@ -102,14 +93,7 @@ class Update(BaseModel):
             metadata=metadata,
             highlighted_comments_urns=data.get("*highlightedComments"),
             highlighted_comments=[],
-            social_detail_urn=data.get("*socialDetail"),
-            boost_header=data.get("boostHeader"),
-            contextual_header=data.get("contextualHeader"),
             reshared_update_urn=data.get("*resharedUpdate"),  # Note: *resharedUpdate is a URN reference
-            interstitial=data.get("interstitial"),
-            aggregated_content=data.get("aggregatedContent"),
-            contextual_description=data.get("contextualDescription"),
-            type=data.get("$type"),
         )
 
 

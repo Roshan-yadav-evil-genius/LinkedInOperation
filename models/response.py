@@ -13,14 +13,12 @@ class InfiniteScrollMetadata(BaseModel):
     """Infinite scroll pagination metadata."""
     
     pagination_token: Optional[str] = None
-    type: Optional[str] = None
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "InfiniteScrollMetadata":
         """Create from dictionary."""
         return cls(
             pagination_token=data.get("paginationToken"),
-            type=data.get("$type"),
         )
 
 
@@ -31,7 +29,6 @@ class CollectionMetadata(BaseModel):
     count: Optional[int] = None
     start: Optional[int] = None
     total: Optional[int] = None
-    type: Optional[str] = None
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "CollectionMetadata":
@@ -40,7 +37,6 @@ class CollectionMetadata(BaseModel):
             count=data.get("count"),
             start=data.get("start"),
             total=data.get("total"),
-            type=data.get("$type"),
         )
 
 
@@ -48,27 +44,13 @@ class CollectionMetadata(BaseModel):
 class CollectionResponse(BaseModel):
     """Collection response with elements and pagination."""
     
-    metadata: Optional[InfiniteScrollMetadata] = None
-    paging: Optional[CollectionMetadata] = None
     elements: Optional[List[str]] = None
-    type: Optional[str] = None
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "CollectionResponse":
         """Create from dictionary."""
-        metadata = None
-        if data.get("metadata"):
-            metadata = InfiniteScrollMetadata.from_dict(data["metadata"])
-        
-        paging = None
-        if data.get("paging"):
-            paging = CollectionMetadata.from_dict(data["paging"])
-        
         return cls(
-            metadata=metadata,
-            paging=paging,
             elements=data.get("*elements"),
-            type=data.get("$type"),
         )
 
 
@@ -77,7 +59,6 @@ class ReactionsCollectionResponse(BaseModel):
     """Reactions collection response."""
     
     feed_dash_profile_updates_by_member_reactions: Optional[CollectionResponse] = None
-    type: Optional[str] = None
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ReactionsCollectionResponse":
@@ -88,7 +69,6 @@ class ReactionsCollectionResponse(BaseModel):
         
         return cls(
             feed_dash_profile_updates_by_member_reactions=reactions,
-            type=data.get("$type"),
         )
 
 
@@ -97,7 +77,6 @@ class CommentsCollectionResponse(BaseModel):
     """Comments collection response."""
     
     feed_dash_profile_updates_by_member_comments: Optional[CollectionResponse] = None
-    type: Optional[str] = None
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "CommentsCollectionResponse":
@@ -108,7 +87,6 @@ class CommentsCollectionResponse(BaseModel):
         
         return cls(
             feed_dash_profile_updates_by_member_comments=comments,
-            type=data.get("$type"),
         )
 
 
@@ -117,7 +95,6 @@ class PostsCollectionResponse(BaseModel):
     """Posts collection response."""
     
     feed_dash_profile_updates_by_member_share_feed: Optional[CollectionResponse] = None
-    type: Optional[str] = None
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "PostsCollectionResponse":
@@ -128,7 +105,6 @@ class PostsCollectionResponse(BaseModel):
         
         return cls(
             feed_dash_profile_updates_by_member_share_feed=posts,
-            type=data.get("$type"),
         )
 
 
@@ -155,7 +131,6 @@ class ReactionsResponse(BaseModel):
     """Parsed reactions response with typed Update objects."""
     
     updates: List[Update] = field(default_factory=list)
-    raw_response: Optional[LinkedInResponse] = None
     index: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -164,7 +139,6 @@ class CommentsResponse(BaseModel):
     """Parsed comments response with typed Comment objects."""
     
     comments: List[Comment] = field(default_factory=list)
-    raw_response: Optional[LinkedInResponse] = None
     index: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -173,5 +147,4 @@ class PostsResponse(BaseModel):
     """Parsed posts response with typed Update objects."""
     
     updates: List[Update] = field(default_factory=list)
-    raw_response: Optional[LinkedInResponse] = None
     index: Dict[str, Any] = field(default_factory=dict)

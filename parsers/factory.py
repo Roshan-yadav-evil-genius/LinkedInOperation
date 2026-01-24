@@ -98,7 +98,6 @@ class LinkedInDataParser:
         
         return ReactionsResponse(
             updates=updates,
-            raw_response=LinkedInResponse.from_dict(self.json_data) if self.json_data else None,
             index=self.index,
         )
     
@@ -124,7 +123,6 @@ class LinkedInDataParser:
         
         return CommentsResponse(
             comments=all_comments,
-            raw_response=LinkedInResponse.from_dict(self.json_data) if self.json_data else None,
             index=self.index,
         )
     
@@ -141,7 +139,6 @@ class LinkedInDataParser:
         
         return PostsResponse(
             updates=updates,
-            raw_response=LinkedInResponse.from_dict(self.json_data) if self.json_data else None,
             index=self.index,
         )
     
