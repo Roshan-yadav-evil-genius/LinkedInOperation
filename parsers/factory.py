@@ -99,15 +99,24 @@ class LinkedInDataParser:
         """
         Parse comments from JSON data.
         
+        Note: comment.json contains Updates, each with highlightedComments.
+        We parse Updates first, then extract their highlighted comments.
+        
         Returns:
             CommentsResponse with typed Comment objects
         """
         elements = self._get_elements()
-        comment_parser = CommentParser(self.index)
-        comments = comment_parser.parse_list(elements)
+        update_parser = UpdateParser(self.index)
+        updates = update_parser.parse_list(elements)
+        
+        # Extract all highlighted comments from Updates
+        all_comments = []
+        for update in updates:
+            if update and update.highlighted_comments:
+                all_comments.extend(update.highlighted_comments)
         
         return CommentsResponse(
-            comments=comments,
+            comments=all_comments,
             raw_response=LinkedInResponse.from_dict(self.json_data) if self.json_data else None,
             index=self.index,
         )

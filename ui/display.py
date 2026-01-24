@@ -317,3 +317,13 @@ class LinkedInDisplay:
         """
         self.console.print(panel)
         self.console.print()  # Empty line for spacing
+    
+    def display_comment(self, panel: Panel) -> None:
+        """
+        Display a comment panel.
+        
+        Args:
+            panel: Rich Panel to display
+        """
+        self.console.print(panel)
+        self.console.print()  # Empty line for spacing
