@@ -24,8 +24,18 @@
 {% endif %}
 {% endfor %}
 {% if found.item is not none %}
+{% set reshared = namespace(text='') %}
+{% if found.item['*resharedUpdate'] is defined and found.item['*resharedUpdate'] %}
+{% for j in included %}
+{% if j.entityUrn is defined and j.entityUrn == found.item['*resharedUpdate'] %}
+{% set reshared.text = ((j.commentary | default({})).text | default({})).text | default('') %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% set current_text = ((found.item.commentary | default({})).text | default({})).text | default('') %}
+{% set full_content = current_text + ('\n\n' + reshared.text if reshared.text else '') %}
 {% if not ns.first %},{% endif %}
-  {"post_id": {{ ((found.item.metadata | default({})).backendUrn | default(found.item.entityUrn) | default(urn)) | tojson }}, "post_content": {{ ((found.item.commentary | default({})).text | default({})).text | default('') | tojson }}, "post_url": {{ (((found.item.socialContent | default({})).shareUrl | default('')) or ((found.item.metadata | default({})).shareUrl | default('')) or '') | tojson }}, "source": {{ section_def.source | tojson }}}
+  {"post_id": {{ ((found.item.metadata | default({})).backendUrn | default(found.item.entityUrn) | default(urn)) | tojson }}, "post_content": {{ full_content | tojson }}, "post_url": {{ (((found.item.socialContent | default({})).shareUrl | default('')) or ((found.item.metadata | default({})).shareUrl | default('')) or '') | tojson }}, "source": {{ section_def.source | tojson }}}
 {% set ns.first = false %}
 {% endif %}
 {% endfor %}
