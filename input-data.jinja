@@ -1,0 +1,33 @@
+{#
+  Expects: data (full JSON from input-data.json).
+  Outputs: One flat JSON array of { "post_id", "post_content", "post_url", "source" } from posts, comments, and reactions.
+#}
+{% set sections = [
+  {'key': 'posts', 'feed': 'feedDashProfileUpdatesByMemberShareFeed', 'source': 'post'},
+  {'key': 'comments', 'feed': 'feedDashProfileUpdatesByMemberComments', 'source': 'comment'},
+  {'key': 'reactions', 'feed': 'feedDashProfileUpdatesByMemberReactions', 'source': 'reaction'}
+] %}
+{% set ns = namespace(first=true) %}
+[
+{% for section_def in sections %}
+{% set section = data[section_def.key] | default({}) %}
+{% set d1 = section['data'] | default({}) %}
+{% set d2 = d1['data'] | default({}) %}
+{% set feed = d2[section_def.feed] | default({}) %}
+{% set elements = feed['*elements'] | default([]) %}
+{% set included = section['included'] | default([]) %}
+{% for urn in elements %}
+{% set found = namespace(item=none) %}
+{% for i in included %}
+{% if i.entityUrn is defined and i.entityUrn == urn and i['$type'] is defined and i['$type'] == 'com.linkedin.voyager.dash.feed.Update' %}
+{% set found.item = i %}
+{% endif %}
+{% endfor %}
+{% if found.item is not none %}
+{% if not ns.first %},{% endif %}
+  {"post_id": {{ ((found.item.metadata | default({})).backendUrn | default(found.item.entityUrn) | default(urn)) | tojson }}, "post_content": {{ ((found.item.commentary | default({})).text | default({})).text | default('') | tojson }}, "post_url": {{ (((found.item.socialContent | default({})).shareUrl | default('')) or ((found.item.metadata | default({})).shareUrl | default('')) or '') | tojson }}, "source": {{ section_def.source | tojson }}}
+{% set ns.first = false %}
+{% endif %}
+{% endfor %}
+{% endfor %}
+]
