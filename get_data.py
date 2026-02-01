@@ -91,11 +91,11 @@ async def main():
         # context.on("requestfailed", on_request_failed)
         
         page = await context.new_page()
-        # await page.goto("https://www.linkedin.com/in/robhochstein/recent-activity/reactions/")
-        # await page.goto("https://www.linkedin.com/in/robhochstein/recent-activity/comments/")
-        # await page.goto("https://www.linkedin.com/in/robhochstein/recent-activity/all/")
-        await page.goto("https://www.linkedin.com/in/robhochstein/")
-        await page.wait_for_timeout(60000)
+        await page.goto("https://www.linkedin.com/in/robhochstein/recent-activity/reactions/")
+        await page.goto("https://www.linkedin.com/in/robhochstein/recent-activity/comments/")
+        await page.goto("https://www.linkedin.com/in/robhochstein/recent-activity/all/")
+        # await page.goto("https://www.linkedin.com/in/robhochstein/")
+        # await page.wait_for_timeout(60000)
         await context.close()
 
 if __name__ == "__main__":
