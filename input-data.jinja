@@ -2,13 +2,16 @@
   Expects: data (full JSON from input-data.json).
   Outputs: One flat JSON array of { "post_id", "post_content", "post_url", "source" } from posts, comments, and reactions.
 #}
+{
+
+
 {% set sections = [
   {'key': 'posts', 'feed': 'feedDashProfileUpdatesByMemberShareFeed', 'source': 'post'},
   {'key': 'comments', 'feed': 'feedDashProfileUpdatesByMemberComments', 'source': 'comment'},
   {'key': 'reactions', 'feed': 'feedDashProfileUpdatesByMemberReactions', 'source': 'reaction'}
 ] %}
 {% set ns = namespace(first=true) %}
-[
+  "all_posts":[
 {% for section_def in sections %}
 {% set section = data[section_def.key] | default({}) %}
 {% set d1 = section['data'] | default({}) %}
@@ -41,3 +44,4 @@
 {% endfor %}
 {% endfor %}
 ]
+}
